@@ -1,0 +1,6 @@
+<launch>
+    <node name="vins_node" pkg = "vins" type = "vins_node" output = "log">
+
+        <!-- <rosparam file="./src/VINS-Fusion/config/davis/agilex.yaml" command="load" /> -->
+    </node>
+</launch>
