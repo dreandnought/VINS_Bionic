@@ -29,6 +29,7 @@ int NUM_ITERATIONS;
 int ESTIMATE_EXTRINSIC;
 int ESTIMATE_TD;
 int ROLLING_SHUTTER;
+int EQUALIZE;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
 std::string OUTPUT_FOLDER;
@@ -199,7 +200,8 @@ void readParameters(std::string config_file)
     INIT_DEPTH = 5.0;
     BIAS_ACC_THRESHOLD = 0.1;
     BIAS_GYR_THRESHOLD = 0.1;
-
+    
+    EQUALIZE = fsSettings["equalize"];
     TD = fsSettings["td"];
     ESTIMATE_TD = fsSettings["estimate_td"];
     if (ESTIMATE_TD)

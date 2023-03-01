@@ -15,11 +15,16 @@ find_package(catkin REQUIRED COMPONENTS
     cv_bridge
     camera_models
     image_transport
+    sensor_msgs
     dvs_msgs)
 
 find_package(OpenCV REQUIRED)
 
 # message(WARNING "OpenCV_VERSION: ${OpenCV_VERSION}")
+
+Set(OpenCV_DIR "/home/zj/Documents/opencv-3.4.11/build") # important find opencv version
+find_package(OpenCV 3.2 QUIET)
+
 
 find_package(Ceres REQUIRED)
 
@@ -54,12 +59,31 @@ add_library(vins_lib
     src/initial/initial_aligment.cpp
     src/initial/initial_sfm.cpp
     src/initial/initial_ex_rotation.cpp
-    src/featureTracker/feature_tracker.cpp)
+    src/featureTracker/feature_tracker.cpp
+    src/featureTracker/linefeature_tracker.cpp
+    # src/featureTracker/line_descriptor/include/line_descriptor/descriptor_custom.hpp
+    # src/featureTracker/line_descriptor/include/line_descriptor_custom.hpp
+    src/featureTracker/line_descriptor/src/binary_descriptor_matcher.cpp
+    src/featureTracker/line_descriptor/src/binary_descriptor_custom.cpp
+    src/featureTracker/line_descriptor/src/draw_custom.cpp
+    src/featureTracker/line_descriptor/src/LSDDetector_custom.cpp
+    )
+include_directories(
+      ${catkin_INCLUDE_DIRS}
+      ${EIGEN3_INCLUDE_DIR}
+      /home/zj/VINS_Bionic/src/VINS_Bionic/vins_estimator/src/featureTracker/line_descriptor/include # find LSD 
+    ) 
 target_link_libraries(vins_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
 
 
+
 add_executable(vins_node src/rosNodeTest.cpp)
-target_link_libraries(vins_node vins_lib) 
+target_link_libraries(vins_node vins_lib)
+target_link_libraries(vins_node
+${catkin_LIBRARIES} 
+${OpenCV_LIBS}
+/home/zj/VINS_Bionic/src/VINS_Bionic/vins_estimator/src/featureTracker/line_descriptor/lib/liblinedesc.so  # line feature
+)
 
 add_executable(kitti_odom_test src/KITTIOdomTest.cpp)
 target_link_libraries(kitti_odom_test vins_lib) 

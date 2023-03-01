@@ -57,6 +57,7 @@ extern int USE_IMU;
 extern int MULTIPLE_THREAD;
 extern int EVENT_DT;
 extern int EVENT_SUM;
+extern int EQUALIZE;
 // pts_gt for debug purpose;
 extern map<int, Eigen::Vector3d> pts_gt;
 

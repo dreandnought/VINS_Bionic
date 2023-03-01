@@ -91,7 +91,7 @@ Green path is VIO odometry; red path is odometry under visual loop closure.
 
 ```
     roslaunch vins vins_rviz.launch
-    rosrun vins vins_node ./src/VINS-Fusion/config/davis/agilex.yaml
+    rosrun vins vins_node ./src/VINS_Bionic/config/davis/agilex.yaml
 ```
 
 ## 4. KITTI Example
