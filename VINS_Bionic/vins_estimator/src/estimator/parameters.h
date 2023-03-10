@@ -58,12 +58,18 @@ extern int MULTIPLE_THREAD;
 extern int EVENT_DT;
 extern int EVENT_SUM;
 extern int EQUALIZE;
+//event time window construct
+extern int USE_V2DT;
+extern int ACC_R;
+extern int GYRO_R;
+extern int AMAGI;
 // pts_gt for debug purpose;
 extern map<int, Eigen::Vector3d> pts_gt;
 
 extern std::string IMAGE0_TOPIC, IMAGE1_TOPIC, EVENT_TOPIC, DEBUG_IMAGE_TOPIC;
 extern std::string FISHEYE_MASK;
 extern std::vector<std::string> CAM_NAMES;
+extern std::vector<std::string> EventCAM_NAMES;
 extern int MAX_CNT;
 extern int MIN_DIST;
 extern double F_THRESHOLD;

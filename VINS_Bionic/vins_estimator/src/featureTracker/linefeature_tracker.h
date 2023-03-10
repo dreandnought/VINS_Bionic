@@ -74,7 +74,7 @@ class LineFeatureTracker
     void readIntrinsicParameter(const string &calib_file);
     void NearbyLineTracking(const vector<Line> forw_lines, const vector<Line> cur_lines, vector<pair<int, int> >& lineMatches);
 
-    vector<Line> undistortedLineEndPoints();
+    pair <vector<int>,vector<Line>> undistortedLineEndPoints();
 
     void readImage(const cv::Mat &_img);
 

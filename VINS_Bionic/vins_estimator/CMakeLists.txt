@@ -60,6 +60,7 @@ add_library(vins_lib
     src/initial/initial_sfm.cpp
     src/initial/initial_ex_rotation.cpp
     src/featureTracker/feature_tracker.cpp
+    src/featureTracker/eventfeature_tracker.cpp
     src/featureTracker/linefeature_tracker.cpp
     # src/featureTracker/line_descriptor/include/line_descriptor/descriptor_custom.hpp
     # src/featureTracker/line_descriptor/include/line_descriptor_custom.hpp

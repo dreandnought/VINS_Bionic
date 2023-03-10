@@ -179,23 +179,43 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     path[sequence_cnt].poses.push_back(pose_stamped);
     path[sequence_cnt].header = pose_stamped.header;
 
+    // if (SAVE_LOOP_PATH)
+    // {
+    //     ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+    //     loop_path_file.setf(ios::fixed, ios::floatfield);
+    //     loop_path_file.precision(0);
+    //     loop_path_file << cur_kf->time_stamp * 1e9 << ",";
+    //     loop_path_file.precision(5);
+    //     loop_path_file  << P.x() << ","
+    //           << P.y() << ","
+    //           << P.z() << ","
+    //           << Q.w() << ","
+    //           << Q.x() << ","
+    //           << Q.y() << ","
+    //           << Q.z() << ","
+    //           << endl;
+    //     loop_path_file.close();
+    // }
+//     ————————————————
+// 版权声明：本文为CSDN博主「Terrence Shen」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+// 原文链接：https://blog.csdn.net/weixin_42001184/article/details/128475807
     if (SAVE_LOOP_PATH)
     {
-        ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+		ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
         loop_path_file.setf(ios::fixed, ios::floatfield);
-        loop_path_file.precision(0);
-        loop_path_file << cur_kf->time_stamp * 1e9 << ",";
+        loop_path_file.precision(9);
+        loop_path_file << cur_kf->time_stamp  << " ";
         loop_path_file.precision(5);
-        loop_path_file  << P.x() << ","
-              << P.y() << ","
-              << P.z() << ","
-              << Q.w() << ","
-              << Q.x() << ","
-              << Q.y() << ","
-              << Q.z() << ","
-              << endl;
+        loop_path_file  << P.x() << " "
+              << P.y() << " "
+              << P.z() << " "
+              << Q.x() << " "
+              << Q.y() << " "
+              << Q.z() << " "
+              << Q.w() << endl;
         loop_path_file.close();
     }
+
     //draw local connection
     if (SHOW_S_EDGE)
     {
@@ -826,23 +846,43 @@ void PoseGraph::updatePath()
             path[(*it)->sequence].header = pose_stamped.header;
         }
 
+        // if (SAVE_LOOP_PATH)
+        // {
+        //     ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+        //     loop_path_file.setf(ios::fixed, ios::floatfield);
+        //     loop_path_file.precision(0);
+        //     loop_path_file << (*it)->time_stamp * 1e9 << ",";
+        //     loop_path_file.precision(5);
+        //     loop_path_file  << P.x() << ","
+        //           << P.y() << ","
+        //           << P.z() << ","
+        //           << Q.w() << ","
+        //           << Q.x() << ","
+        //           << Q.y() << ","
+        //           << Q.z() << ","
+        //           << endl;
+        //     loop_path_file.close();
+        // }
+//         ————————————————
+// 版权声明：本文为CSDN博主「Terrence Shen」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+// 原文链接：https://blog.csdn.net/weixin_42001184/article/details/128475807
         if (SAVE_LOOP_PATH)
         {
             ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
             loop_path_file.setf(ios::fixed, ios::floatfield);
-            loop_path_file.precision(0);
-            loop_path_file << (*it)->time_stamp * 1e9 << ",";
+            loop_path_file.precision(9);
+            loop_path_file << (*it)->time_stamp << " ";
             loop_path_file.precision(5);
-            loop_path_file  << P.x() << ","
-                  << P.y() << ","
-                  << P.z() << ","
-                  << Q.w() << ","
-                  << Q.x() << ","
-                  << Q.y() << ","
-                  << Q.z() << ","
-                  << endl;
+            loop_path_file  << P.x() << " "
+                  << P.y() << " "
+                  << P.z() << " "
+                  << Q.x() << " "
+                  << Q.y() << " "
+                  << Q.z() << " "
+                  << Q.w() << endl;
             loop_path_file.close();
         }
+
         //draw local connection
         if (SHOW_S_EDGE)
         {

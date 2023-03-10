@@ -30,6 +30,11 @@ int ESTIMATE_EXTRINSIC;
 int ESTIMATE_TD;
 int ROLLING_SHUTTER;
 int EQUALIZE;
+
+int USE_V2DT;
+int ACC_R;
+int GYRO_R;
+int AMAGI;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
 std::string OUTPUT_FOLDER;
@@ -46,6 +51,7 @@ map<int, Eigen::Vector3d> pts_gt;
 std::string IMAGE0_TOPIC, IMAGE1_TOPIC, EVENT_TOPIC, DEBUG_IMAGE_TOPIC;
 std::string FISHEYE_MASK;
 std::vector<std::string> CAM_NAMES;
+std::vector<std::string> EventCAM_NAMES;
 int MAX_CNT;
 int MIN_DIST;
 double F_THRESHOLD;
@@ -118,7 +124,7 @@ void readParameters(std::string config_file)
     MIN_PARALLAX = MIN_PARALLAX / FOCAL_LENGTH;
 
     fsSettings["output_path"] >> OUTPUT_FOLDER;
-    VINS_RESULT_PATH = OUTPUT_FOLDER + "/vio.csv";
+    VINS_RESULT_PATH = OUTPUT_FOLDER + "/vio.txt";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
     std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
     fout.close();
@@ -175,10 +181,14 @@ void readParameters(std::string config_file)
     int pn = config_file.find_last_of('/');
     std::string configPath = config_file.substr(0, pn);
     
-    std::string cam0Calib;
+    std::string cam0Calib, camECalib;
     fsSettings["cam0_calib"] >> cam0Calib;
     std::string cam0Path = configPath + "/" + cam0Calib;
     CAM_NAMES.push_back(cam0Path);
+
+    fsSettings["camE_calib"] >> camECalib;
+    std::string camEPath = configPath + "/" + camECalib;
+    EventCAM_NAMES.push_back(camEPath);
 
     if(NUM_OF_CAM == 2)
     {
@@ -204,6 +214,12 @@ void readParameters(std::string config_file)
     EQUALIZE = fsSettings["equalize"];
     TD = fsSettings["td"];
     ESTIMATE_TD = fsSettings["estimate_td"];
+
+    USE_V2DT = fsSettings["usev2dt"];
+    ACC_R = fsSettings["acc_ratio"];
+    GYRO_R = fsSettings["gyro_ratio"];
+    AMAGI = fsSettings["const_amagi"];
+
     if (ESTIMATE_TD)
         ROS_INFO_STREAM("Unsynchronized sensors, online estimate time offset, initial td: " << TD);
     else

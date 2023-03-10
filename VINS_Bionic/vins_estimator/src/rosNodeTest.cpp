@@ -36,6 +36,7 @@ std::mutex m_buf, e_buf;
 
 int event_dt = 20, event_sum = 5000;
 double DT=0;
+int errimg_count=0;
 
 void img0_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
@@ -64,7 +65,7 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     for (const auto &event : msg->events)
     {
         dvs_msgs::Event _event = event;
-        _event.ts = msg->header.stamp;
+        // _event.ts = msg->header.stamp;
         event_buf.push(_event);
     }
     // int n=msg->events.size();
@@ -151,6 +152,7 @@ void sync_process()
             // event
             cv::Size img_size(event_COL,event_ROW);
             cv::Mat event_img, debug_img;
+
             m_buf.lock();
             if (!img0_buf.empty())
             {
@@ -288,11 +290,17 @@ void sync_process()
                 // }else{
                 //     cout<<"we have published a null event frame"<<endl;
                 // }
-                // event_img = cv.cvtColor(event_img, cv.COLOR_BGR2GRAY)
-                estimator.inputImage(time, image, res);
-                // estimator.inputImage(time,res,image);
-                // estimator.inputImage(time,image,debug_img);
-                // estimator.inputImage(time,debug_img,image);
+                if(image.cols==COL && image.rows==ROW){
+                    // event_img = cv.cvtColor(event_img, cv.COLOR_BGR2GRAY)
+                    estimator.inputImage(time, image, res);
+                    // estimator.inputImage(time, image, image);
+                    // estimator.inputImage(time,res,image);
+                    // estimator.inputImage(time,res,res);
+                    // estimator.inputImage(time,debug_img,image);
+                }else{
+                    errimg_count++;
+                    ROS_ERROR("Error size image received!!! row=%d,col=%d,count=%d",image.rows,image.cols,errimg_count);
+                }
             }
         }
 

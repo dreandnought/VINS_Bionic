@@ -16,23 +16,27 @@ void LineFeatureTracker::readIntrinsicParameter(const string &calib_file)
     K_ = m_camera->initUndistortRectifyMap(undist_map1_,undist_map2_);    
 
 }
-
-vector<Line> LineFeatureTracker::undistortedLineEndPoints()
+//简单的用内参矩阵把端点的像素坐标转化为归一化屏幕坐标。
+pair <vector<int>,vector<Line>> LineFeatureTracker::undistortedLineEndPoints()
 {
     vector<Line> un_lines;
     un_lines = curframe_->vecLine;
-    float fx = K_.at<float>(0, 0);
-    float fy = K_.at<float>(1, 1);
-    float cx = K_.at<float>(0, 2);
-    float cy = K_.at<float>(1, 2);
-    for (unsigned int i = 0; i <curframe_->vecLine.size(); i++)
-    {
-        un_lines[i].StartPt.x = (curframe_->vecLine[i].StartPt.x - cx)/fx;
-        un_lines[i].StartPt.y = (curframe_->vecLine[i].StartPt.y - cy)/fy;
-        un_lines[i].EndPt.x = (curframe_->vecLine[i].EndPt.x - cx)/fx;
-        un_lines[i].EndPt.y = (curframe_->vecLine[i].EndPt.y - cy)/fy;
-    }
-    return un_lines;
+    vector<int> un_lineid;
+    un_lineid = curframe_->lineID;
+
+    // float fx = K_.at<float>(0, 0);
+    // float fy = K_.at<float>(1, 1);
+    // float cx = K_.at<float>(0, 2);
+    // float cy = K_.at<float>(1, 2);
+    // for (unsigned int i = 0; i <curframe_->vecLine.size(); i++)
+    // {
+    //     un_lines[i].StartPt.x = (curframe_->vecLine[i].StartPt.x - cx)/fx;
+    //     un_lines[i].StartPt.y = (curframe_->vecLine[i].StartPt.y - cy)/fy;
+    //     un_lines[i].EndPt.x = (curframe_->vecLine[i].EndPt.x - cx)/fx;
+    //     un_lines[i].EndPt.y = (curframe_->vecLine[i].EndPt.y - cy)/fy;
+    // }
+    pair<vector<int>,vector<Line>> res(un_lineid,un_lines);
+    return res;
 }
 
 void LineFeatureTracker::NearbyLineTracking(const vector<Line> forw_lines, const vector<Line> cur_lines,
@@ -146,7 +150,10 @@ void LineFeatureTracker::readImage(const cv::Mat &_img)
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         clahe->apply(img, img);
     }
-
+    //二值化处理试试
+    cv::cvtColor(img,img,COLOR_BGR2GRAY);
+    cv::threshold(img,img,100,255,THRESH_BINARY);
+    
     bool first_img = false;
     if (forwframe_ == nullptr) // 系统初始化的第一帧图像
     {
@@ -200,7 +207,7 @@ void LineFeatureTracker::readImage(const cv::Mat &_img)
         //visualizeLinewithID(forwframe_->vecLine,forwframe_->lineID,forwframe_->img,"forwframe_");
         //visualizeLinewithID(curframe_->vecLine,curframe_->lineID,curframe_->img,"curframe_");
         stringstream ss;
-        ss <<"/home/hyj/datasets/line/" <<frame_cnt<<".jpg";
+        ss <<"/home/zj/dataset/lines/" <<frame_cnt<<".jpg";
         // SaveFrameLinewithID(forwframe_->vecLine,forwframe_->lineID,forwframe_->img,ss.str().c_str());
         waitKey(5);
 
@@ -293,7 +300,7 @@ void visualize_line_match(Mat imageMat1, Mat imageMat2,
     namedWindow("LSD matches", CV_WINDOW_NORMAL);
     imshow( "LSD matches", lsd_outImg );
     string name = to_string(frame_num);
-    string path = "/home/dragon/ros_ws/p_ws/src/PL-VIO/feature_tracker/src/image/";
+    string path = "/home/zj/dataset/agilex/debugimg/";
     name = path + name + ".jpg";
     frame_num ++;
     imwrite(name, lsd_outImg);
@@ -483,7 +490,7 @@ void LineFeatureTracker::readImage(const cv::Mat &_img)
     // lsd_->detect( img, lsd, 2, 2 );
 
     sum_time += t_li.toc();
-   ROS_INFO("line detect costs: %fms", t_li.toc());
+   ROS_DEBUG("line detect costs: %fms, keylines:%d ", t_li.toc(),lsd.size());
 
     Mat lbd_descr, keylbd_descr;
     // step 2: lbd descriptor
@@ -536,7 +543,10 @@ void LineFeatureTracker::readImage(const cv::Mat &_img)
         Ptr<BinaryDescriptorMatcher> bdm_;
         bdm_ = BinaryDescriptorMatcher::createBinaryDescriptorMatcher();
         bdm_->match(forwframe_->lbd_descr, curframe_->lbd_descr, lsd_matches);
-//        ROS_INFO("lbd_macht costs: %fms", t_match.toc());
+        ROS_DEBUG("lbd_macht costs: %fms", t_match.toc());
+        // visualize_line_match(forwframe_->img.clone(), curframe_->img.clone(), forwframe_->keylsd, curframe_->keylsd, lsd_matches);
+        // std::cout<<"lsd_matches = "<<lsd_matches.size()<<" forwframe_->keylsd = "<<keylbd_descr.size()<<" curframe_->keylsd = "<<keylbd_descr.size()<<std::endl;
+        ROS_DEBUG("lsd_matches =%d , forwframe_->keylsd =%d , curframe_->keylsd =%d",lsd_matches.size(),keylbd_descr.size(),keylbd_descr.size());
         sum_time += t_match.toc();
         mean_time = sum_time/frame_cnt;
         // ROS_INFO("line feature tracker mean costs: %fms", mean_time);
@@ -570,7 +580,7 @@ void LineFeatureTracker::readImage(const cv::Mat &_img)
 
 
 
-        //visualize_line_match(forwframe_->img.clone(), curframe_->img.clone(), forwframe_->keylsd, curframe_->keylsd, good_matches);
+        visualize_line_match(forwframe_->img.clone(), curframe_->img.clone(), forwframe_->keylsd, curframe_->keylsd, good_matches);
 
         //把没追踪到的线存起来
 

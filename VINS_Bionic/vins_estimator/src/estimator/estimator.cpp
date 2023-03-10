@@ -125,7 +125,7 @@ void Estimator::setParameter()
     g = G;
     cout << "set g " << g.transpose() << endl;
     featureTracker.readIntrinsicParameter(CAM_NAMES);
-    event_featureTracker.readIntrinsicParameter(CAM_NAMES);
+    event_featureTracker.readIntrinsicParameter(EventCAM_NAMES);
 
     std::cout << "MULTIPLE_THREAD is " << MULTIPLE_THREAD << '\n';
     if (MULTIPLE_THREAD && !initThreadFlag)
@@ -2252,6 +2252,7 @@ void Estimator::getPoseInWorldFrame(int index, Eigen::Matrix4d &T)
 
 void Estimator::predictPtsInNextFrame()
 {
+    //多线程不用这个
     printf("predict pts in next frame\n");
     if(frame_count < 2)
         return;
