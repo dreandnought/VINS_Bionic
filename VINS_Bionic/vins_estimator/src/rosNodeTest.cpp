@@ -24,6 +24,8 @@
 #include <dvs_msgs/Event.h>
 #include <dvs_msgs/EventArray.h>
 
+#define M_PI 3.14159265358979323846 /* pi */
+
 Estimator estimator;
 
 queue<sensor_msgs::ImuConstPtr> imu_buf;
@@ -35,12 +37,16 @@ stack<dvs_msgs::Event> event_buf, event_buf_pre;
 std::mutex m_buf, e_buf;
 
 int event_dt = 20, event_sum = 5000;
-double DT=0;
-int errimg_count=0;
+double DT = 0;
+
+int errimg_count = 0;
+
+std_msgs::Header vivid_header;
 
 void img0_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
     m_buf.lock();
+    // vivid_header = img_msg->header;
     img0_buf.push(img_msg);
     m_buf.unlock();
 }
@@ -65,7 +71,7 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     for (const auto &event : msg->events)
     {
         dvs_msgs::Event _event = event;
-        // _event.ts = msg->header.stamp;
+        // _event.ts = vivid_header.stamp;
         event_buf.push(_event);
     }
     // int n=msg->events.size();
@@ -94,9 +100,21 @@ cv::Mat getImageFromMsg(const sensor_msgs::ImageConstPtr &img_msg)
     cv::Mat img = ptr->image.clone();
     return img;
 }
-double dTimeWindow(int event_pre){
-    if(event_pre>=event_sum){
-        return event_dt*(event_sum/event_pre);
+double dTimeWindow(int event_pre , double linear_v , double angluar_v)
+{
+    // dynamic time window : dt=T * amagi/ (aV + bG +amagi)
+    if (USE_V2DT)
+    {
+        double res = event_dt * (AMAGI / (AMAGI + linear_v*ACC_R + angluar_v*GYRO_R));
+        ROS_DEBUG_THROTTLE(0.05,"dTimeWindow: acc=%f, gyr= %f,dt=%f",linear_v,angluar_v,res);
+        return res<=2 ? 2:res;
+    }
+    else
+    {
+        if (event_pre >= event_sum)
+        {
+            return event_dt * (event_sum / event_pre);
+        }
     }
     return event_dt;
 }
@@ -150,7 +168,7 @@ void sync_process()
             std_msgs::Header header;
             double time = 0;
             // event
-            cv::Size img_size(event_COL,event_ROW);
+            cv::Size img_size(event_COL, event_ROW);
             cv::Mat event_img, debug_img;
 
             m_buf.lock();
@@ -165,8 +183,16 @@ void sync_process()
                     debug_img = getImageFromMsg(debugimg_buf.front());
                     debugimg_buf.pop();
                 }
-                // cout<<"start accumulate event image..."<<endl;
-                // img_size = image.size();
+                // get current linear and angluar velocity
+
+                Vector3d Linear_velocity = estimator.latest_V;
+                Vector3d angluar_velovity = estimator.latest_gyr_0;
+
+                double current_angluar_velovity = sqrt(angluar_velovity(0) * angluar_velovity(0) + angluar_velovity(1) * angluar_velovity(1) + angluar_velovity(2) * angluar_velovity(2));
+                double current_linear_velocity = sqrt(Linear_velocity(0) * Linear_velocity(0) + Linear_velocity(1) * Linear_velocity(1) + Linear_velocity(2) * Linear_velocity(2));
+
+                    // cout<<"start accumulate event image..."<<endl;
+                    // img_size = image.size();
                 event_img = cv::Mat::zeros(img_size, CV_16UC1);
                 int acc_nums = 0, acc_pre_nums = 0;
                 // if(event_buf.empty())
@@ -179,52 +205,69 @@ void sync_process()
                 while (!event_buf.empty())
                 {
                     dvs_msgs::Event _event = event_buf.top();
-                    //dt (ns)->(ms)
-                    double dt =(header.stamp - _event.ts).toNSec() / 1000000;
-                    if(abs(dt)>=(event_dt*5)){
-                        ROS_ERROR_THROTTLE(1,"Event accumulator: dt = %d , time stamp not aligned",dt);
+                    // dt (ns)->(ms)
+                    double dt = (header.stamp - _event.ts).toNSec() / 1000000;
+                    if (abs(dt) >= (event_dt * W_SIZE))
+                    {
+                        ROS_ERROR_THROTTLE(1, "Event accumulator: dt = %f , time stamp not aligned", dt);
                         break;
-                    }else{
-                        ROS_DEBUG_THROTTLE(1,"Event accumulator: adding event into event_frame");
                     }
-                    if(dt >=0){
+                    else
+                    {
+                        ROS_DEBUG_THROTTLE(1, "Event accumulator: adding event into event_frame");
+                    }
+                    if (dt >= 0)
+                    {
                         t_pre++;
-                        //限定叠加总数
+                        // 限定叠加总数
                         if (acc_nums <= event_sum)
-                        {  
-                            //限定叠加时间窗口
-                            if (dt <= dTimeWindow(event_n))
+                        {
+                            // // 限定叠加时间窗口
+                            if (dt <= dTimeWindow(event_n,current_linear_velocity,current_angluar_velovity))
                             {
                                 acc_nums++;
                                 int x = _event.x;
                                 int y = _event.y;
                                 ++event_img.at<uint16_t>(cv::Point(x, y));
                                 event_pre_temps.push(_event);
-                            }else if(acc_nums<= 10000){
+                            }
+                            else if (acc_nums <= EVENT_MIN)
+                            {
+                                if (dt <=dTimeWindow(event_n,current_linear_velocity,current_angluar_velovity)*W_SIZE2)
+                                {
                                 acc_nums++;
                                 int x = _event.x;
                                 int y = _event.y;
                                 ++event_img.at<uint16_t>(cv::Point(x, y));
                                 event_pre_temps.push(_event);
-                            }else{
+                                }
+                            }
+                            else
+                            {
                                 // do nothing
                             }
                         }
-                    }else{
-                    // 发现消息队列中经常会收到不少时间戳在图像之后的事件流，把他们保存起来留着下一轮使用可以增加更多用于合成的事件
+                    }
+                    else
+                    {
+                        // 发现消息队列中经常会收到不少时间戳在图像之后的事件流，把他们保存起来留着下一轮使用可以增加更多用于合成的事件
                         temps.push(_event);
                         t_aft++;
                     }
                     event_buf.pop();
                 }
-                if(event_n<=(event_sum/2)){
-                    //总数过少，则认为运动程度太低，激励不足，则使用上一轮叠加的事件补充进去
-                    while (!event_buf_pre.empty()){
+                //$$
+                if (event_n <= (event_sum / 2))
+                {
+                    // 总数过少，则认为运动程度太低，激励不足，则使用上一轮叠加的事件补充进去
+                    while (!event_buf_pre.empty())
+                    {
                         dvs_msgs::Event _event = event_buf_pre.top();
                         double dt = (header.stamp - _event.ts).toNSec() / 1000000;
                         if (acc_nums <= event_sum)
                         {
-                            if (dt <= (event_dt*3)){
+                            if (dt <= (event_dt * W_SIZE))
+                            {
                                 acc_nums++;
                                 acc_pre_nums++;
                                 int x = _event.x;
@@ -235,11 +278,27 @@ void sync_process()
                         }
                         event_buf_pre.pop();
                     }
+                }else{
+                    // //20220322 debug
+                    // while (!event_buf_pre.empty())
+                    // {
+                    //     dvs_msgs::Event _event = event_buf_pre.top();
+                    //     double dt = (header.stamp - _event.ts).toNSec() / 1000000;
+
+                    //         if (dt <= (event_dt * W_SIZE))
+                    //         {
+
+                    //             event_pre_temps.push(_event);
+                    //         }
+
+                    //     event_buf_pre.pop();
+                    // }
                 }
-                ROS_DEBUG("Image recived, event accumulated,headerT=%d,t_pre=%d,t_aft=%d , accumulated=%d , pre used=%d", header.stamp.toNSec(), t_pre, t_aft,acc_nums,acc_pre_nums);
+                //$$
+                ROS_DEBUG("Image recived, event accumulated,headerT=%d,t_pre=%d,t_aft=%d , accumulated=%d , pre used=%d", header.stamp.toNSec(), t_pre, t_aft, acc_nums, acc_pre_nums);
 
                 swap(temps, event_buf);
-                //把当前轮已经叠加好的数据暂存起来，供下一轮激励不足时使用
+                // 把当前轮已经叠加好的数据暂存起来，供下一轮激励不足时使用
                 swap(event_pre_temps, event_buf_pre);
                 e_buf.unlock();
             }
@@ -268,10 +327,32 @@ void sync_process()
 
             if (!image.empty())
             {
-                // cv::imwrite("./frameevent_normalized.jpg",event_img);
+
+                // cv::Mat res,ERODE,DILATE,OPEN,GRADIENT,midblur,CLOSE;
                 cv::Mat res;
                 event_img.convertTo(res, CV_8UC1, 255.0 / 65535);
-                // cv::imwrite("./frameevent_cv8.jpg",res);
+                //$$
+                // cv::imwrite("./frameevent.jpg",event_img);
+                cv::medianBlur(res,res,3);
+                //$$
+                // cv::imwrite("./frameevent_blured.jpg",res);
+
+                // int g_nStructElementSize = 3;
+                // Mat element =getStructuringElement(MORPH_CROSS,  
+                //        Size(g_nStructElementSize,g_nStructElementSize),  
+                //         Point(1, 1 )); 
+                // // cv::morphologyEx(midblur,ERODE,0, element);
+                // // cv::morphologyEx(midblur,DILATE,1, element);
+                // cv::morphologyEx(res,CLOSE,MORPH_CLOSE, element);
+                // // cv::morphologyEx(midblur,GRADIENT,MORPH_GRADIENT, element);
+                // cv::morphologyEx(res,OPEN,MORPH_OPEN, element);
+                // // cv::imwrite("./frameevent_ERODE.jpg",ERODE);
+                // // cv::imwrite("./frameevent_DILATE.jpg",DILATE);
+                // cv::imwrite("./frameevent_CLOSE.jpg",CLOSE);
+                // // cv::imwrite("./frameevent_GRADIENT.jpg",GRADIENT);
+                // cv::imwrite("./frameevent_OPEN.jpg",OPEN);
+
+                // // cv::medianBlur(CLOSE,CLOSE,3);
                 // if(!res.empty()){
                 //     bool isNull=true;
                 //     int y=event_img.rows;
@@ -290,16 +371,19 @@ void sync_process()
                 // }else{
                 //     cout<<"we have published a null event frame"<<endl;
                 // }
-                if(image.cols==COL && image.rows==ROW){
+                if (image.cols == COL && image.rows == ROW)
+                {
                     // event_img = cv.cvtColor(event_img, cv.COLOR_BGR2GRAY)
-                    estimator.inputImage(time, image, res);
+                    estimator.inputImage(time, image,res);
                     // estimator.inputImage(time, image, image);
                     // estimator.inputImage(time,res,image);
                     // estimator.inputImage(time,res,res);
-                    // estimator.inputImage(time,debug_img,image);
-                }else{
+                    // estimator.inputImage(time,image,debug_img);
+                }
+                else
+                {
                     errimg_count++;
-                    ROS_ERROR("Error size image received!!! row=%d,col=%d,count=%d",image.rows,image.cols,errimg_count);
+                    ROS_ERROR("Error size image received!!! row=%d,col=%d,count=%d", image.rows, image.cols, errimg_count);
                 }
             }
         }
@@ -423,7 +507,7 @@ int main(int argc, char **argv)
     {
         event_dt = EVENT_DT;
         event_sum = EVENT_SUM;
-        std::cout << "event_dt = "<<event_dt<<" event_sum = "<<event_sum<<endl; 
+        std::cout << "event_dt = " << event_dt << " event_sum = " << event_sum << endl;
     }
     else
     {

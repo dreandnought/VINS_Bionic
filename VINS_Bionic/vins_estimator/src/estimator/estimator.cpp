@@ -375,6 +375,7 @@ void Estimator::processMeasurements()
             std_msgs::Header header;
             header.frame_id = "world";
             header.stamp = ros::Time(feature.first);
+            header_4_contri.stamp = header.stamp;
 
             pubOdometry(*this, header);
             pubKeyPoses(*this, header);
@@ -1740,10 +1741,13 @@ void Estimator::optimization()
             problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
         }
     }
+
+    int f_m_cnt = 0;
+    int event_f_m_cnt = 0;
 //添加重投影误差block
 //哪个初始化成功了就添加哪个进入block
     if(initialflag==1||initialflag==3){
-        int f_m_cnt = 0;
+        
         int feature_index = -1;
         for (auto &it_per_id : f_manager.feature)
         {
@@ -1794,7 +1798,7 @@ void Estimator::optimization()
     }
 //添加event重投影
     if(initialflag==1||initialflag==2){
-        int event_f_m_cnt = 0;
+        
         int event_feature_index = -1;
         for (auto &it_per_id : event_manager.feature)
         {
@@ -2089,8 +2093,18 @@ void Estimator::optimization()
             
         }
     }
+
     //printf("whole marginalization costs: %f \n", t_whole_marginalization.toc());
     //printf("whole time for ceres: %f \n", t_whole.toc());
+    // write contribute information to file
+    ofstream foutC(CONTRIBUTE_RESULT_PATH, ios::app);
+	foutC.setf(ios::fixed, ios::floatfield);
+	foutC.precision(9);
+	foutC <<header_4_contri.stamp.toSec() << " ";
+	foutC.precision(2);
+	foutC << f_m_cnt << " "
+	       << event_f_m_cnt << endl;
+    foutC.close();
 }
 
 void Estimator::slideWindow()

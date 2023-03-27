@@ -13,9 +13,9 @@ image0_topic: "/dvs/image_raw"
 image1_topic: "/dvs/image_raw"
 event_topic: "/dvs/events"
 debug_image_topic: "/dvs_rendering"
-output_path: "/home/zju/dataset/agilex/result/vinsbionicresult"
-path_output_name: "/agilex_path_campus02_loop.txt"
-contribute_output_name: "/contribute_ampus02_loop.txt"
+output_path: "/home/zj/dataset/agilex/result/vinsbionicresult"
+path_output_name: "/agilex_path_20230317campus01_loop.txt"
+contribute_output_name: "/contribute_agilex_path_20230317campus01_loop.txt"
 
 cam0_calib: "davis346_on_agilex.yaml"
 camE_calib: "davis346_on_agilex.yaml"
@@ -33,8 +33,6 @@ usev2dt: 1
 acc_ratio: 0.3
 gyro_ratio: 3
 const_amagi: 3
-window_size: 2
-window_size2: 8
 
 # Extrinsic parameter between IMU and Camera.
 estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.

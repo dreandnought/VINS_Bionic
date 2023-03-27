@@ -210,4 +210,6 @@ class Estimator
 
     bool initFirstPoseFlag;
     bool initThreadFlag;
+
+    std_msgs::Header header_4_contri;
 };

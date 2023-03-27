@@ -7,30 +7,29 @@ num_of_cam: 1
 
 imu_topic: "/dvs/imu"
 # imu_topic: "/imu/data"
-image0_topic: "/dvs/image_raw"
-# image0_topic: "/camera/image_color"
+image0_topic: "/camera/image_color"
 # image0_topic: "/dvs_rendering"
 image1_topic: "/dvs/image_raw"
 event_topic: "/dvs/events"
 debug_image_topic: "/dvs_rendering"
-output_path: "/home/zj/dataset/agilex/result"
-path_output_name: "/hdr_poster_full.txt"
-contribute_output_name: "/contribute_hdr_poster_full.txt"
+output_path: "/home/zj/dataset/agilex/result/vinsbionicresult/vivid"
+path_output_name: "/vivid_path.txt"
+contribute_output_name: "/contribute_vivid.txt"
 
-cam0_calib: "davis240_pinhole.yaml"
-camE_calib: "davis240_pinhole.yaml"
+cam0_calib: "vivid_rgb_cam.yaml"
+camE_calib: "vivid_dvxplorer.yaml"
 # cam1_calib: "cam1_mei.yaml"
-image_width: 240
-image_height: 180
-event_width: 240
-event_height: 180
+image_width: 1280
+image_height: 1024
+event_width: 640
+event_height: 480
 # event accumulate settings : event_dt=ms
 event_dt: 25
-event_sum: 20000
-event_min: 9000
+event_sum: 80000
+event_min: 35000
 #v2dt params:
 usev2dt: 1
-acc_ratio: 1
+acc_ratio: 0.3
 gyro_ratio: 3
 const_amagi: 3
 # Extrinsic parameter between IMU and Camera.
@@ -42,24 +41,26 @@ body_T_cam0: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [0.99991843, -0.01197069, 0.00445458, 0.0046474,
-          0.01194681, 0.99991433, 0.00534932, -0.00591917,
-          -0.00451823, -0.00529567, 0.99997577, 0.02987307,
-           0, 0, 0, 1]
+   data: [0.0270616,-0.019032, 0.999453,0.0479878,
+         -0.999632,0.00133414,0.0270919,-0.393595,
+         0.00184903,0.999818,0.0189889,0.416462,
+         0,0,0,1]
+
 
 body_T_Event: !!opencv-matrix
 # body_T_Event:
    rows: 4
    cols: 4
    dt: d
-   data: [0.99991843, -0.01197069, 0.00445458, 0.0046474,
-          0.01194681, 0.99991433, 0.00534932, -0.00591917,
-          -0.00451823, -0.00529567, 0.99997577, 0.02987307,
-           0, 0, 0, 1]
+   data: [0.0424507,-0.0188186,0.998921,0.0431297,
+         -0.999068,-0.00866967,0.0422936,-0.264147,
+         -0.00786442,0.999785,0.0191691,0.411451,
+         0,0,0,1]
 
 
-# gyrobiasinit: [0.0527066,0.0287401,0.00387119]
-gyrobiasinit: [0.0527066,0.0287401]
+
+gyrobiasinit: [0.0527066,0.0287401,0.00387119]
+# gyrobiasinit: [0.0527066,0.0287401]
 #Multiple thread support
 multiple_thread: 1
 
@@ -84,7 +85,7 @@ gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.
 g_norm: 9.81007     # gravity magnitude
 
 #unsynchronization parameters
-estimate_td: 0                      # online estimate time offset between camera and imu
+estimate_td: 1                      # online estimate time offset between camera and imu
 td: 0.0                             # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
 
 #loop closure parameters

@@ -384,7 +384,7 @@ void pubEventCloud(const Estimator &estimator, const std_msgs::Header &header)
             continue;
         int imu_i = it_per_id.start_frame;
         Vector3d pts_i = it_per_id.feature_per_frame[0].point * it_per_id.estimated_depth;
-        Vector3d w_pts_i = estimator.Rs[imu_i] * (estimator.ric[0] * pts_i + estimator.tic[0]) + estimator.Ps[imu_i];
+        Vector3d w_pts_i = estimator.Rs[imu_i] * (estimator.rie[0] * pts_i + estimator.tie[0]) + estimator.Ps[imu_i];
 
         geometry_msgs::Point32 p;
         p.x = w_pts_i(0);

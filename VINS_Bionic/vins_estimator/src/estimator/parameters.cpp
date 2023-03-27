@@ -32,12 +32,17 @@ int ROLLING_SHUTTER;
 int EQUALIZE;
 
 int USE_V2DT;
-int ACC_R;
-int GYRO_R;
-int AMAGI;
+double ACC_R;
+double GYRO_R;
+double AMAGI;
+double W_SIZE;
+double W_SIZE2;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
+std::string CONTRIBUTE_RESULT_PATH;
 std::string OUTPUT_FOLDER;
+std::string PATH_OUTPUT_NAME;
+std::string CONTRIBUTE_OUTPUT_NAME;
 std::string IMU_TOPIC;
 int ROW, COL, event_ROW, event_COL;
 double TD;
@@ -47,6 +52,7 @@ int USE_IMU;
 int MULTIPLE_THREAD;
 int EVENT_DT;
 int EVENT_SUM;
+int EVENT_MIN;
 map<int, Eigen::Vector3d> pts_gt;
 std::string IMAGE0_TOPIC, IMAGE1_TOPIC, EVENT_TOPIC, DEBUG_IMAGE_TOPIC;
 std::string FISHEYE_MASK;
@@ -104,6 +110,7 @@ void readParameters(std::string config_file)
     MULTIPLE_THREAD = fsSettings["multiple_thread"];
     EVENT_DT = fsSettings["event_dt"];
     EVENT_SUM = fsSettings["event_sum"];
+    EVENT_MIN = fsSettings["event_min"];
 
     USE_IMU = fsSettings["imu"];
     printf("USE_IMU: %d\n", USE_IMU);
@@ -124,10 +131,16 @@ void readParameters(std::string config_file)
     MIN_PARALLAX = MIN_PARALLAX / FOCAL_LENGTH;
 
     fsSettings["output_path"] >> OUTPUT_FOLDER;
-    VINS_RESULT_PATH = OUTPUT_FOLDER + "/vio.txt";
+    fsSettings["path_output_name"] >> PATH_OUTPUT_NAME;
+    fsSettings["contribute_output_name"] >> CONTRIBUTE_OUTPUT_NAME;
+    VINS_RESULT_PATH = OUTPUT_FOLDER + PATH_OUTPUT_NAME;
+    CONTRIBUTE_RESULT_PATH = OUTPUT_FOLDER + CONTRIBUTE_OUTPUT_NAME;
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
+    std::cout << "contribute  path " << CONTRIBUTE_RESULT_PATH << std::endl;
     std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
+    std::ofstream contr_fout(CONTRIBUTE_RESULT_PATH, std::ios::out);
     fout.close();
+    contr_fout.close();
 
     ESTIMATE_EXTRINSIC = fsSettings["estimate_extrinsic"];
     if (ESTIMATE_EXTRINSIC == 2)
@@ -219,6 +232,8 @@ void readParameters(std::string config_file)
     ACC_R = fsSettings["acc_ratio"];
     GYRO_R = fsSettings["gyro_ratio"];
     AMAGI = fsSettings["const_amagi"];
+    W_SIZE  = fsSettings["window_size"];
+    W_SIZE2  = fsSettings["window_size2"];
 
     if (ESTIMATE_TD)
         ROS_INFO_STREAM("Unsynchronized sensors, online estimate time offset, initial td: " << TD);

@@ -13,12 +13,12 @@ image0_topic: "/dvs/image_raw"
 image1_topic: "/dvs/image_raw"
 event_topic: "/dvs/events"
 debug_image_topic: "/dvs_rendering"
-output_path: "/home/zj/dataset/agilex/result"
-path_output_name: "/hdr_poster_full.txt"
-contribute_output_name: "/contribute_hdr_poster_full.txt"
+output_path: "/home/zju/dataset/agilex/result/vinsbionicresult"
+path_output_name: "/Vinsbionic_vio.txt"
+contribute_output_name: "/contribute_vio.txt"
 
-cam0_calib: "davis240_pinhole.yaml"
-camE_calib: "davis240_pinhole.yaml"
+cam0_calib: "dvs240_uzh.yaml"
+camE_calib: "dvs240_uzh.yaml"
 # cam1_calib: "cam1_mei.yaml"
 image_width: 240
 image_height: 180
@@ -27,12 +27,14 @@ event_height: 180
 # event accumulate settings : event_dt=ms
 event_dt: 25
 event_sum: 20000
-event_min: 9000
+event_min: 10000
 #v2dt params:
 usev2dt: 1
-acc_ratio: 1
+acc_ratio: 0.3
 gyro_ratio: 3
 const_amagi: 3
+window_size: 3
+window_size2: 3
 # Extrinsic parameter between IMU and Camera.
 estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
@@ -47,6 +49,7 @@ body_T_cam0: !!opencv-matrix
           -0.00451823, -0.00529567, 0.99997577, 0.02987307,
            0, 0, 0, 1]
 
+
 body_T_Event: !!opencv-matrix
 # body_T_Event:
    rows: 4
@@ -56,6 +59,7 @@ body_T_Event: !!opencv-matrix
           0.01194681, 0.99991433, 0.00534932, -0.00591917,
           -0.00451823, -0.00529567, 0.99997577, 0.02987307,
            0, 0, 0, 1]
+
 
 
 # gyrobiasinit: [0.0527066,0.0287401,0.00387119]
@@ -84,7 +88,7 @@ gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.
 g_norm: 9.81007     # gravity magnitude
 
 #unsynchronization parameters
-estimate_td: 0                      # online estimate time offset between camera and imu
+estimate_td: 1                      # online estimate time offset between camera and imu
 td: 0.0                             # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
 
 #loop closure parameters
